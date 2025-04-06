@@ -28,11 +28,32 @@ BASE_URL = "https://api.openweathermap.org/data/2.5/forecast"
 
 @app.get("/")
 def read_root():
+    """
+    Root endpoint of the Weather Data Analyzer API.
+    Returns a welcome message to indicate that the API is running.
+    Useful as a health check or landing endpoint.
+    Returns:
+    - A JSON object with a welcome message.
+    """
     return {"Welcome to the Weather Data Analyzer API!"}
 
 @app.get("/weather", response_model=WeatherStats, responses={404: {"model": ErrorResponse}})
 @cache(expire=300) 
-def get_weather(city: str = Query(..., description="City name to fetch weather data")):
+
+def get_weather(city: str = Query(..., description="Enter the city name to fetch weather data")):
+    """Retrieves and returns weather statistics for a given city.
+    This endpoint fetches the 5-day weather forecast from the OpenWeatherMap API
+    for the specified city, processes the data to calculate average, highest,
+    and lowest temperatures, and summarizes the weather conditions.
+    Args:
+        city (str): The name of the city for which weather data is to be fetched.
+    Returns:
+        WeatherStats: A Pydantic model containing average temperature,highest and lowest temperatures, and a summary of conditions.
+    Raises:
+        HTTPException: 
+            - 404 if the city is not found or the API call fails.
+            - 404 if no temperature data is available for the past 5 days.
+    """
     params = {
         "q": city,
         "appid": API_KEY,
@@ -76,12 +97,26 @@ def get_weather(city: str = Query(..., description="City name to fetch weather d
 @app.get("/compare", response_model=CityComparison)
 @cache(expire=300)
 def compare_weather(city1: str = Query(...), city2: str = Query(...)):
-
+    '''Creates another Endpoint to compare the weather data of two cities
+       Returns: Result obtained from the API in JSON format'''
     city1 = city1.strip().lower()
     city2 = city2.strip().lower()
     city1, city2 = sorted([city1, city2])
 
     def fetch_city_weather(city):
+        '''Fetches and processes weather data for a given city.
+           Makes an API request to the OpenWeatherMap service to retrieve the 5-day forecast.
+           Calculates average, highest, and lowest temperatures along with a summary of weather conditions.
+
+        Args:
+            city (str): Name of the city to fetch weather data for.
+
+        Returns:
+            CityWeather: A Pydantic model containing weather statistics for the city.
+
+        Raises:
+            HTTPException: If the API call fails or no valid temperature data is found.
+        '''
         params = {
             "q": city,
             "appid": API_KEY,

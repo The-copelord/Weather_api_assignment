@@ -1,0 +1,36 @@
+Steps to execute:   Open your texteditor or preferred application where you run your python code
+                    Create a root folder "Weather_Api_Assignment"
+                    Create 3 files 
+                    |.env
+                    |main.py
+                    |models.py 
+                    Run main.py and paste this in your browser "http://127.0.0.1:8000/docs#/default/compare_weather_compare_get"
+
+
+Accompished:   Basic Requirements:
+
+               Developed a RESTful API using FastAPI to serve weather data insights.
+
+               Implemented a GET endpoint (/weather) that accepts a city name as a query parameter.
+
+               Integrated the OpenWeatherMap API using the requests library to fetch 5-day weather forecasts.
+
+               Processed JSON responses to compute: Average,Maximum and Minumum temperature over the last 5 days.
+
+               A summary of weather conditions, such as "Clear", "Clouds", or "Rain".
+
+               Handled errors with appropriate HTTP status codes and informative messages.
+
+               Utilized Pydantic models for response validation and clear type annotations.
+
+               Added docstrings and metadata for automatic API documentation through Swagger UI (OpenAPI).
+
+               Bonus Challenges: 
+
+               Created Multiple endpoints to compare cities and their weather data
+
+               Caching responses to reduce external API calls and reduce response time (partially done)
+
+Issues faced:  Caching does not reflect on the weblink but it does return as positive in TERMINAL logs
+               Trying to implement Backgorund tasks causes the API to not post output 
+               
