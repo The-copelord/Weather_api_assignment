@@ -1,30 +1,37 @@
 import os
 from pathlib import Path
-from fastapi import FastAPI, HTTPException, Query
 from typing import List
 from models import WeatherStats, ErrorResponse
 import requests
 from datetime import datetime, timedelta
 from dotenv import load_dotenv
-
-
+from fastapi import FastAPI, HTTPException, Query
+from fastapi_cache import FastAPICache
+from fastapi_cache.decorator import cache
+from fastapi_cache.backends.inmemory import InMemoryBackend
+from cachetools import TTLCache
 
 load_dotenv(dotenv_path=Path(__file__).parent / ".env")
 
 app = FastAPI(title="Weather Data Analyzer API")
-
+@app.on_event("startup")
+async def startup():
+    FastAPICache.init(InMemoryBackend(), prefix="weather-cache")
 load_dotenv(dotenv_path=Path(__file__).parent / ".env")
-print("Check if key is being loaded:", os.environ.get("OPENWEATHERMAP_API_KEY"))
 API_KEY ="2e4928286d1375202901c21ed0810fd0"
 print("API KEY:", API_KEY)
 BASE_URL = "https://api.openweathermap.org/data/2.5/forecast"
+weather_cache = TTLCache(maxsize=100, ttl=300)
+@app.get("/")
+def read_root():
+    return {"Welcome to the Weather Data Analyzer API!"}
 
 @app.get("/weather", response_model=WeatherStats, responses={404: {"model": ErrorResponse}})
+@cache(expire=300)  # Caches for 5 minutes
 def get_weather(city: str = Query(..., description="City name to fetch weather data")):
-    """
-    Fetches and analyzes the last 5 days of weather data for a given city.
-    Calculates average, highest, and lowest temperature, and summarizes weather conditions.
-    """
+    if city in weather_cache:
+        print("Returning cached result for:", city)
+        return weather_cache[city]
     params = {
         "q": city,
         "appid": API_KEY,
@@ -41,11 +48,11 @@ def get_weather(city: str = Query(..., description="City name to fetch weather d
     conditions = []
 
     now = datetime.utcnow()
-    five_days_ago = now - timedelta(days=5)
+    five_days_after = now - timedelta(days=5)
 
     for item in data.get("list", []):
         timestamp = datetime.utcfromtimestamp(item["dt"])
-        if timestamp >= five_days_ago:
+        if timestamp >= five_days_after:
             temp = item["main"]["temp"]
             weather = item["weather"][0]["main"]
             temperatures.append(temp)
@@ -58,10 +65,13 @@ def get_weather(city: str = Query(..., description="City name to fetch weather d
     max_temp = max(temperatures)
     min_temp = min(temperatures)
     unique_conditions = list(set(conditions))
-
-    return WeatherStats(
+    result = WeatherStats(
         average_temperature=avg_temp,
         highest_temperature=max_temp,
         lowest_temperature=min_temp,
         weather_summary=unique_conditions
     )
+    # Store in cache
+    weather_cache[city] = result
+
+    return result
