@@ -1,0 +1,16 @@
+A texteditor preferably Vscode
+
+Install dependencies:
+fastapi
+uvicorn
+requests
+python-dotenv
+cachetools
+fastapi-cache2
+httpx
+pytest
+pytest-asyncio
+
+A browser 
+
+An internet Connection
